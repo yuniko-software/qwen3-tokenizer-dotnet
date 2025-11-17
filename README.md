@@ -118,18 +118,14 @@ for (int i = 0; i < result.Ids.Length; i++)
 ### ONNX Runtime Integration
 
 ```csharp
-// Prepare inputs for ONNX Runtime inference
-var inputs = tokenizer.PrepareForOnnx(
-    "Your input text here", 
-    addSpecialTokens: true, 
-    maxLength: 512
-);
+// Prepare inputs for ONNX Runtime inference (dynamic length, no padding)
+var inputs = tokenizer.PrepareForOnnx("Your input text here");
 
 // Use with ONNX Runtime
 // Note: Some models (e.g., embedding models) may not require position_ids
-long[] inputIds = inputs.InputIds;           // Token IDs with padding
-long[] attentionMask = inputs.AttentionMask; // 1 for real tokens, 0 for padding
-long[] positionIds = inputs.PositionIds;     // Position indices
+long[] inputIds = inputs.InputIds;
+long[] attentionMask = inputs.AttentionMask;
+long[] positionIds = inputs.PositionIds;
 ```
 
 ### Loading from Local Files

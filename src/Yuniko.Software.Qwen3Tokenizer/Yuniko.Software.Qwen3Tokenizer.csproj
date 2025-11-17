@@ -8,7 +8,7 @@
     
     <!-- NuGet Package Metadata -->
     <PackageId>Yuniko.Software.Qwen3Tokenizer</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Yuniko Software</Authors>
     <Company>Yuniko Software</Company>
     <Product>Qwen3 Tokenizer</Product>

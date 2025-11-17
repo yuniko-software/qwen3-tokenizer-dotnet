@@ -9,78 +9,68 @@ public class OnnxPreparationTests
         _tokenizer = Qwen3Tokenizer.FromHuggingFace("Qwen/Qwen3-0.6B", isForEmbeddingModel: false);
     }
 
-    [Theory]
-    [InlineData("Hello world", 10)]
-    [InlineData("Short", 20)]
-    [InlineData("This is a longer sentence that will be truncated", 5)]
-    public void PrepareForOnnx_ReturnsCorrectLength(string text, int maxLength)
-    {
-        var result = _tokenizer.PrepareForOnnx(text, maxLength: maxLength);
-
-        Assert.Equal(maxLength, result.InputIds.Length);
-        Assert.Equal(maxLength, result.AttentionMask.Length);
-        Assert.Equal(maxLength, result.PositionIds.Length);
-        Assert.Equal(maxLength, result.SequenceLength);
-    }
-
     [Fact]
-    public void PrepareForOnnx_PadsShortSequences()
-    {
-        const string text = "Hi";
-        const int maxLength = 10;
-
-        var result = _tokenizer.PrepareForOnnx(text, maxLength: maxLength);
-
-        var tokenCount = _tokenizer.CountTokens(text, addSpecialTokens: true);
-
-        for (int i = 0; i < tokenCount; i++)
-        {
-            Assert.Equal(1L, result.AttentionMask[i]);
-        }
-
-        for (int i = tokenCount; i < maxLength; i++)
-        {
-            Assert.Equal(0L, result.AttentionMask[i]);
-        }
-    }
-
-    [Fact]
-    public void PrepareForOnnx_TruncatesLongSequences()
-    {
-        const string text = "This is a very long sentence that will definitely exceed the maximum length limit";
-        const int maxLength = 5;
-
-        var result = _tokenizer.PrepareForOnnx(text, maxLength: maxLength);
-
-        Assert.Equal(maxLength, result.InputIds.Length);
-        Assert.All(result.AttentionMask, mask => Assert.Equal(1L, mask));
-
-        // All position IDs should be sequential when all tokens are real (non-padded), regardless of whether truncation occurred
-        for (int i = 0; i < maxLength; i++)
-        {
-            Assert.Equal(i, result.PositionIds[i]);
-        }
-    }
-
-    [Fact]
-    public void PrepareForOnnx_CreatesCorrectPositionIds()
+    public void PrepareForOnnx_UsesActualTokenCount()
     {
         const string text = "Hello world";
-        const int maxLength = 10;
 
-        var result = _tokenizer.PrepareForOnnx(text, maxLength: maxLength);
+        var result = _tokenizer.PrepareForOnnx(text);
         var tokenCount = _tokenizer.CountTokens(text, addSpecialTokens: true);
 
-        // Position IDs should be sequential for real tokens
-        for (int i = 0; i < tokenCount; i++)
+        Assert.Equal(tokenCount, result.InputIds.Length);
+        Assert.Equal(tokenCount, result.AttentionMask.Length);
+        Assert.Equal(tokenCount, result.PositionIds.Length);
+        Assert.Equal(tokenCount, result.SequenceLength);
+    }
+
+    [Fact]
+    public void PrepareForOnnx_NoPadding()
+    {
+        const string text = "Short";
+
+        var result = _tokenizer.PrepareForOnnx(text);
+
+        Assert.All(result.AttentionMask, mask => Assert.Equal(1L, mask));
+    }
+
+    [Theory]
+    [InlineData("Hi")]
+    [InlineData("This is a test")]
+    [InlineData("A much longer sentence with more tokens to encode")]
+    public void PrepareForOnnx_MatchesTokenCount(string text)
+    {
+        var result = _tokenizer.PrepareForOnnx(text);
+        var tokenCount = _tokenizer.CountTokens(text, addSpecialTokens: true);
+
+        Assert.Equal(tokenCount, result.SequenceLength);
+        Assert.All(result.AttentionMask, mask => Assert.Equal(1L, mask));
+    }
+
+    [Fact]
+    public void PrepareForOnnx_CreatesSequentialPositionIds()
+    {
+        const string text = "Hello world test";
+
+        var result = _tokenizer.PrepareForOnnx(text);
+
+        for (int i = 0; i < result.PositionIds.Length; i++)
         {
             Assert.Equal(i, result.PositionIds[i]);
         }
+    }
 
-        // Position IDs should be 0 for padding tokens
-        for (int i = tokenCount; i < maxLength; i++)
+    [Fact]
+    public void PrepareForOnnx_EncodesCorrectly()
+    {
+        const string text = "How are you?";
+
+        var result = _tokenizer.PrepareForOnnx(text);
+        var encoded = _tokenizer.Encode(text, addSpecialTokens: true);
+
+        Assert.Equal(encoded.Length, result.InputIds.Length);
+        for (int i = 0; i < encoded.Length; i++)
         {
-            Assert.Equal(0L, result.PositionIds[i]);
+            Assert.Equal(encoded[i], result.InputIds[i]);
         }
     }
 }

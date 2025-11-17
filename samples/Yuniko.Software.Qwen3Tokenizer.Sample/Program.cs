@@ -85,13 +85,13 @@ Console.WriteLine("5. ONNX Runtime Integration");
 Console.WriteLine("---------------------------");
 
 string onnxText = "How are you today?";
-var onnxInputs = tokenizer.PrepareForOnnx(onnxText, maxLength: 32);
 
+var onnxInputs = tokenizer.PrepareForOnnx(onnxText);
 Console.WriteLine($"Text: \"{onnxText}\"");
-Console.WriteLine($"Max length: {onnxInputs.SequenceLength}");
-Console.WriteLine($"Input IDs (first 10): [{string.Join(", ", onnxInputs.InputIds.Take(10))}...]");
-Console.WriteLine($"Attention mask (first 10): [{string.Join(", ", onnxInputs.AttentionMask.Take(10))}...]");
-Console.WriteLine($"Position IDs (first 10): [{string.Join(", ", onnxInputs.PositionIds.Take(10))}...]");
+Console.WriteLine($"Sequence length: {onnxInputs.SequenceLength}");
+Console.WriteLine($"Input IDs: [{string.Join(", ", onnxInputs.InputIds)}]");
+Console.WriteLine($"Attention mask: [{string.Join(", ", onnxInputs.AttentionMask)}]");
+Console.WriteLine($"Position IDs: [{string.Join(", ", onnxInputs.PositionIds)}]");
 Console.WriteLine("Note: Some models (e.g., embedding models) may not require position_ids\n");
 
 // ============================================================================

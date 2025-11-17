@@ -142,19 +142,13 @@ public class EmbeddingModelTests
     [Fact]
     public void PrepareForOnnx_EmbeddingModel_WithSpecialTokens_IncludesPadToken()
     {
-        const int maxLength = 20;
-        var result = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true, maxLength: maxLength);
-
-        var tokenCount = _embeddingTokenizer.CountTokens(TestText, addSpecialTokens: true);
+        var result = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true);
         var encoded = _embeddingTokenizer.Encode(TestText, addSpecialTokens: true);
 
-        for (int i = 0; i < encoded.Length && i < maxLength; i++)
+        Assert.Equal(encoded.Length, result.InputIds.Length);
+        for (int i = 0; i < encoded.Length; i++)
         {
             Assert.Equal(encoded[i], result.InputIds[i]);
-        }
-
-        for (int i = 0; i < tokenCount && i < maxLength; i++)
-        {
             Assert.Equal(1L, result.AttentionMask[i]);
         }
     }
@@ -162,19 +156,21 @@ public class EmbeddingModelTests
     [Fact]
     public void PrepareForOnnx_EmbeddingModel_WithoutSpecialTokens_DoesNotIncludePadToken()
     {
-        const int maxLength = 20;
-        var resultWithSpecial = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true, maxLength: maxLength);
-        var resultWithoutSpecial = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: false, maxLength: maxLength);
+        var resultWithSpecial = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true);
+        var resultWithoutSpecial = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: false);
 
         var encodedWith = _embeddingTokenizer.Encode(TestText, addSpecialTokens: true);
         var encodedWithout = _embeddingTokenizer.Encode(TestText, addSpecialTokens: false);
 
-        for (int i = 0; i < encodedWith.Length && i < maxLength; i++)
+        Assert.Equal(encodedWith.Length, resultWithSpecial.InputIds.Length);
+        Assert.Equal(encodedWithout.Length, resultWithoutSpecial.InputIds.Length);
+
+        for (int i = 0; i < encodedWith.Length; i++)
         {
             Assert.Equal(encodedWith[i], resultWithSpecial.InputIds[i]);
         }
 
-        for (int i = 0; i < encodedWithout.Length && i < maxLength; i++)
+        for (int i = 0; i < encodedWithout.Length; i++)
         {
             Assert.Equal(encodedWithout[i], resultWithoutSpecial.InputIds[i]);
         }
@@ -183,33 +179,10 @@ public class EmbeddingModelTests
     [Fact]
     public void PrepareForOnnx_NonEmbeddingModel_SpecialTokensParameterDoesNotAffectEncoding()
     {
-        const int maxLength = 20;
-        var withSpecial = _nonEmbeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true, maxLength: maxLength);
-        var withoutSpecial = _nonEmbeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: false, maxLength: maxLength);
+        var withSpecial = _nonEmbeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true);
+        var withoutSpecial = _nonEmbeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: false);
 
         Assert.Equal(withSpecial.InputIds, withoutSpecial.InputIds);
         Assert.Equal(withSpecial.AttentionMask, withoutSpecial.AttentionMask);
-    }
-
-    [Theory]
-    [InlineData(5)]
-    [InlineData(10)]
-    [InlineData(50)]
-    public void PrepareForOnnx_EmbeddingModel_DifferentMaxLengths_CorrectlyHandlesPadToken(int maxLength)
-    {
-        var result = _embeddingTokenizer.PrepareForOnnx(TestText, addSpecialTokens: true, maxLength: maxLength);
-
-        Assert.Equal(maxLength, result.InputIds.Length);
-        Assert.Equal(maxLength, result.AttentionMask.Length);
-        Assert.Equal(maxLength, result.PositionIds.Length);
-
-        var encoded = _embeddingTokenizer.Encode(TestText, addSpecialTokens: true);
-        var actualTokenCount = Math.Min(encoded.Length, maxLength);
-
-        for (int i = 0; i < actualTokenCount; i++)
-        {
-            Assert.Equal(encoded[i], result.InputIds[i]);
-            Assert.Equal(1L, result.AttentionMask[i]);
-        }
     }
 }
