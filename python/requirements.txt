@@ -1,5 +1,5 @@
 # Python dependencies for generating test data
 # Install with: pip install -r requirements.txt
 
-transformers>=5.10.2
+transformers>=5.15.0
 torch>=2.12.0
